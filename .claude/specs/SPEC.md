@@ -35,14 +35,5 @@ Build the agentic backend for Traan. The system must autonomously:
 - All agent actions are logged to the events table with structured payload
 - Crisis Commander reasoning output is readable in the events log
 
-## Required Environment Variables
-GEMINI_API_KEY
-GOOGLE_MAPS_API_KEY
-META_WHATSAPP_TOKEN
-META_PHONE_NUMBER_ID
-META_VERIFY_TOKEN
-DATABASE_URL
-FIREBASE_CREDENTIALS_PATH
-PUBSUB_PROJECT_ID
-PUBSUB_TOPIC_ID
-```
+## Required Environment Variables 
+are in .env file 

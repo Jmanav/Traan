@@ -43,7 +43,6 @@ India has ~3.3M NGOs. When a crisis hits, the first 6 hours are when coordinated
 
 ## Project Structure
 
-```
 traan/
 ├── CLAUDE.md                  # Claude Code memory
 ├── SPEC.md                    # Build spec
@@ -67,7 +66,6 @@ traan/
 ├── infra/            # cloudbuild.yaml, terraform
 ├── docker-compose.yml
 └── .env.example
-```
 
 ---
 
