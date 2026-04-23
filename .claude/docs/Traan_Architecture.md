@@ -4,16 +4,16 @@
 
 ---
 
-## Feature 1: WhatsApp Signal Ingestion
+## Feature 1: Telegram Signal Ingestion
 **Milestone 1 — Foundation of the entire pipeline**
 
 Receives voice notes, images, and texts from field workers in real time. Zero app install required on the field worker's side.
 
 | Component | Technology | Why |
 |---|---|---|
-| Messaging channel | Meta WhatsApp Cloud API | Free, official, handles audio/image/text natively. 500M+ Indian users already on it. |
-| Webhook receiver | FastAPI (Python) | Async, handles concurrent payloads; `POST /webhook` for messages, `GET /webhook` for Meta verification |
-| Media download | Meta Graph API | Fetches audio/image bytes from WhatsApp CDN before Gemini processing |
+| Messaging channel | Telegram Bot API | Free, no business approval required, handles audio/image/text natively. Works on any Android device — high rural penetration in India. |
+| Webhook receiver | FastAPI (Python) | Async, handles concurrent payloads; `POST /webhook` for Telegram updates |
+| Media download | Telegram getFile API | Fetches audio/image bytes from Telegram CDN before Gemini processing |
 | Message queue | Google Cloud Pub/Sub | Decouples ingestion from processing — absorbs burst traffic during a real crisis without dropping messages |
 
 **Key files:** `backend/api/webhook.py`, `backend/workers/pubsub_consumer.py`
@@ -98,14 +98,14 @@ Matches volunteers, sends task cards, waits for confirmation, and re-dispatches 
 |---|---|---|
 | Volunteer query | PostGIS nearest-neighbor + skill filter | Ranks by: distance + skill match + language capability + historical response rate |
 | Route calculation | Google Maps Routes API | Approach route accounting for blocked roads extracted from incident signals |
-| Task card delivery | Meta WhatsApp Cloud API | Same connection as ingestion. Volunteers already use WhatsApp — zero onboarding. |
+| Task card delivery | Telegram Bot API | Same connection as ingestion. Volunteers already use Telegram — zero onboarding. |
 | Confirmation loop | Python `asyncio` + Pub/Sub | Non-blocking 8-minute timeout — system continues processing other incidents while waiting |
 | Fallback logic | Dispatch Agent re-query | Marks unresponsive, queries next candidate automatically. Continues until confirmed or coverage fails. |
 | Coverage failure | `report_coverage_failure()` | Signals Crisis Commander → NDRF escalation path |
 
 **Task card format:** Location · Role · Approach route · ETA · "Reply 1 to confirm, 2 to decline"
 
-**Key files:** `backend/agents/dispatch_agent.py`, `backend/services/whatsapp_sender.py`
+**Key files:** `backend/agents/dispatch_agent.py`, `backend/services/telegram_sender.py`
 
 ---
 
@@ -245,9 +245,7 @@ CREATE INDEX idx_events_incident       ON events(incident_id);
 ```
 GEMINI_API_KEY
 GOOGLE_MAPS_API_KEY
-META_WHATSAPP_TOKEN
-META_PHONE_NUMBER_ID
-META_VERIFY_TOKEN
+TELEGRAM_BOT_TOKEN
 DATABASE_URL
 FIREBASE_CREDENTIALS_PATH
 PUBSUB_PROJECT_ID

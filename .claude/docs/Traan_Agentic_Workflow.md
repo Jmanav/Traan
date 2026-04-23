@@ -373,61 +373,6 @@ List any gaps or anything that doesn't match the spec.
 ```
 ----
 
-## 9. Claude Code Skills
-
-Create these files in `/skills/` before starting. Reference them in every prompt.
-
-### `/skills/gemini-calls.md`
-
-```markdown
-# Gemini Call Conventions for Traan
-
-- Always use model: gemini-1.5-pro (never flash or nano for agent reasoning)
-- All Gemini calls must go through /backend/services/gemini_fusion.py
-- Always wrap calls in try/except and log errors with incident_id context
-- Always strip ```json fences before parsing: response.text.strip().replace("```json","").replace("```","")
-- Always validate that required fields exist in extraction before writing to DB
-- If confidence < 0.4, flag the signal as low_confidence but still process it
-- Audio: encode as base64, mime_type audio/ogg
-- Image: encode as base64, mime_type image/jpeg
-- Return structured dict from every function — never return raw Gemini response
-- Crisis Commander system prompt must include: all active incidents, volunteer map, current timestamp
-```
-
-### `/skills/postgis-queries.md`
-
-```markdown
-# PostGIS Query Conventions for Traan
-
-- All PostGIS queries must go through /backend/services/geo_service.py
-- Always use ST_DWithin for radius checks — faster than ST_Distance filter
-- Always cast geometry to geography for accurate meter-based distance: location::geography
-- Always use bound parameters with SQLAlchemy text() — never string-format SQL
-- Volunteer nearest-neighbor: ORDER BY ST_Distance ASC, LIMIT configurable (default 5)
-- Corroboration check radius: 2km, time window: 2 hours
-- Always ensure spatial indexes exist before running queries (idx_incidents_coordinates, idx_volunteers_location)
-- For incident clustering: ST_Collect + ST_ConvexHull for bounding polygons
-- Distance unit: always meters internally, convert to km for display
-```
-
-### `/skills/whatsapp-messages.md`
-
-```markdown
-# WhatsApp Message Conventions for Traan
-
-- All outbound messages must go through /backend/services/whatsapp_sender.py
-- Never send WhatsApp messages directly from agent files
-- Task card must include: incident location, volunteer role, approach route, ETA, confirm instruction
-- Confirm instruction always: "Reply 1 to confirm, 2 to decline"
-- Check-in message must reference the specific incident so volunteer knows which crisis
-- Follow-up message (after 8 min no response) must be shorter and more urgent than task card
-- Log every outbound message to events table: volunteer_id, incident_id, message_type, timestamp
-- Never send more than 3 messages to the same volunteer for the same incident
-- If volunteer replies anything other than 1 or 2, treat as unresponsive after 13 total minutes
-```
-
----
-
 ## 10. Build Order & Milestones
 
 Build exactly one milestone at a time. Test before moving to the next. Tell Claude Code explicitly which milestone you are on at the start of every session.
@@ -441,14 +386,12 @@ Build exactly one milestone at a time. Test before moving to the next. Tell Clau
 ```
 Read CLAUDE.md and SPEC.md. Build Milestone 1: Foundation.
 Create: docker-compose.yml with FastAPI + PostgreSQL/PostGIS, 
-the full DB schema from docs/Traan.md section 7, 
+the full DB schema from @docs/Traan_Architecture.md, 
 SQLAlchemy models for all tables, 
 config.py loading all env vars from .env.example,
 and a FastAPI main.py with /health endpoint.
 Stop after that. Tell me how to test it.
 ```
-
----
 
 ### Milestone 2 — Signal Agent
 **What to build:** WhatsApp webhook endpoint + Gemini multimodal extraction + geocoding + incident create/strengthen
