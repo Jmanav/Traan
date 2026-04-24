@@ -79,7 +79,7 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/traan
 GEMINI_API_KEY=your_key_here
 ```
 
-All other keys (Maps, WhatsApp, Firebase, Pub/Sub) are only validated when
+All other keys (Maps, Telegram, Firebase, Pub/Sub) are only validated when
 the feature that uses them is first called — they do not block server startup.
 
 ---

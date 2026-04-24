@@ -2,7 +2,7 @@
 
 ## What This Project Is
 Traan is a multi-agent AI system for real-time crisis dispatch in rural India.
-Converts unstructured WhatsApp signals (voice notes in Hindi/regional languages,
+Converts unstructured Telegram signals (voice notes in Hindi/regional languages,
 images, texts) into a live crisis map and autonomously dispatches NGO volunteers.
 Built for Google AI Solution Challenge 2026.
 
