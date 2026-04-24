@@ -59,12 +59,12 @@ backend/
 ## Build Status
 ### Completed
 - Milestone 1: Foundation (DB schema, models, FastAPI skeleton, local dev setup)
-
-### In Progress
 - Milestone 2: Signal Agent
 
-### Not Started
+### In Progress
 - Milestone 3: Triage Agent
+
+### Not Started
 - Milestone 4: Crisis Commander
 - Milestone 5: Dispatch Agent
 - Milestone 6: Monitor Agent
