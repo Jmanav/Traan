@@ -1,9 +1,9 @@
-# SevaSense: Tactical Crisis Coordination PWA
+# Traan: Tactical Crisis Coordination PWA
 
-SevaSense is a high-performance, professional-grade Progressive Web App (PWA) designed for NGOs and disaster response teams. It provides real-time situational awareness, resource coordination, and incident management through a "tactical-first" interface. By combining Google’s mapping infrastructure with advanced WebGL visualization, SevaSense turns chaotic field data into actionable intelligence.
+Traan is a high-performance, professional-grade Progressive Web App (PWA) designed for NGOs and disaster response teams. It provides real-time situational awareness, resource coordination, and incident management through a "tactical-first" interface. By combining Google’s mapping infrastructure with advanced WebGL visualization, Traan turns chaotic field data into actionable intelligence.
 
 ## The Core Vision
-In a crisis, information overload is as dangerous as a lack of information. SevaSense was built to solve the "noise" problem. We use a military-inspired tactical dark theme to reduce eye strain during long shifts and prioritize high-contrast visual cues (red alert zones, neon status badges) so dispatchers can make split-second decisions without hunting for data.
+In a crisis, information overload is as dangerous as a lack of information. Traan was built to solve the "noise" problem. We use a military-inspired tactical dark theme to reduce eye strain during long shifts and prioritize high-contrast visual cues (red alert zones, neon status badges) so dispatchers can make split-second decisions without hunting for data.
 
 ## Tech Stack
 We’ve stayed strictly within a high-performance, modern stack to ensure the app is both fast and stable:
@@ -42,7 +42,7 @@ We’ve stayed strictly within a high-performance, modern stack to ensure the ap
 ### 1. Clone the Repository
 ```bash
 git clone <your-repo-url>
-cd sevasense
+cd frontend
 ```
 
 ### 2. Install Dependencies
@@ -63,7 +63,7 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## PWA Support
-SevaSense is fully optimized for mobile deployment. It can be "installed" on iOS or Android devices for full-screen field use. It features responsive layouts that transition the tactical dashboard into a bottom-sheet driven mobile interface.
+Traan is fully optimized for mobile deployment. It can be "installed" on iOS or Android devices for full-screen field use. It features responsive layouts that transition the tactical dashboard into a bottom-sheet driven mobile interface.
 
 ---
 **Built for the field. Built for impact.**
