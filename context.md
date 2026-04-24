@@ -559,4 +559,4 @@ Provide real values in `.env.local` (git-ignored). Never commit actual keys. See
 
 ---
 
-*Google Solutions Challenge 2026 · Recursive Impact · SDG 11 · SDG 17*
+*Google Solutions Challenge 2026*
