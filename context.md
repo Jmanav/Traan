@@ -6,7 +6,7 @@
 
 ## 1. Project Overview
 
-**Traan** is a crisis coordination Progressive Web App (PWA) for NGO coordinators managing disaster response in India. It was built as a submission for the **Google Solutions Challenge 2026** under team **Recursive Impact**, targeting **SDG 11** (Sustainable Cities) and **SDG 17** (Partnerships).
+**Traan** is a crisis coordination Progressive Web App (PWA) for NGO coordinators managing disaster response in India. It was built as a submission for the **Google Solutions Challenge 2026**, targeting **SDG 11** (Sustainable Cities) and **SDG 17** (Partnerships).
 
 ### The Problem It Solves
 During natural disasters, field workers (volunteers, affected civilians) generate raw, unstructured information: voice notes in Hindi/Marathi, fragmented text messages, photos of flooded roads. This data never gets digitized or reaches coordinators in time. The 0–6 hour window after a crisis event is critical, and most NGOs are blind during it.
