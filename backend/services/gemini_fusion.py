@@ -36,8 +36,8 @@ _model: genai.GenerativeModel | None = None
 def _get_model() -> genai.GenerativeModel:
     global _model
     if _model is None:
-        genai.configure(api_key=config.get_gemini_api_key())
-        _model = genai.GenerativeModel("gemini-1.5-pro")
+        genai.configure(api_key=config.get_gemini_api_key(), transport="rest")
+        _model = genai.GenerativeModel("gemini-2.5-flash")
     return _model
 
 

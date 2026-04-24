@@ -1,6 +1,6 @@
 # Gemini Call Conventions for Traan
 
-- Always use model: gemini-1.5-pro (never flash or nano for agent reasoning)
+- Always use model: gemini-2.5-flash
 - All Gemini calls must go through /backend/services/gemini_fusion.py
 - Always wrap calls in try/except and log errors with incident_id context
 - Always strip ```json fences before parsing: response.text.strip().replace("```json","").replace("```","")

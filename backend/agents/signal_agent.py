@@ -1,4 +1,5 @@
 import base64
+import json
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -125,12 +126,12 @@ async def _log_event(
     await session.execute(
         text("""
             INSERT INTO events (incident_id, agent_name, action, payload, outcome)
-            VALUES (:incident_id, 'signal', :action, :payload::jsonb, :outcome)
+            VALUES (:incident_id, 'signal', :action, CAST(:payload AS jsonb), :outcome)
         """),
         {
             "incident_id": incident_id,
             "action": action,
-            "payload": str(payload).replace("'", '"'),
+            "payload": json.dumps(payload),
             "outcome": outcome,
         },
     )
@@ -181,7 +182,7 @@ async def _create_incident(
             INSERT INTO signals (
                 incident_id, signal_type, raw_content, extracted, source_phone, confidence
             ) VALUES (
-                :incident_id, :signal_type, :raw_content, :extracted::jsonb,
+                :incident_id, :signal_type, :raw_content, CAST(:extracted AS jsonb),
                 :source_phone, :confidence
             )
         """),
@@ -189,7 +190,7 @@ async def _create_incident(
             "incident_id": incident_id,
             "signal_type": signal_type,
             "raw_content": extracted.get("location_raw", ""),
-            "extracted": str(extracted).replace("'", '"'),
+            "extracted": json.dumps(extracted),
             "source_phone": source_id[:15],
             "confidence": extracted.get("confidence", 0.0),
         },
@@ -241,7 +242,7 @@ async def _strengthen_incident(
             INSERT INTO signals (
                 incident_id, signal_type, raw_content, extracted, source_phone, confidence
             ) VALUES (
-                :incident_id, :signal_type, :raw_content, :extracted::jsonb,
+                :incident_id, :signal_type, :raw_content, CAST(:extracted AS jsonb),
                 :source_phone, :confidence
             )
         """),
@@ -249,7 +250,7 @@ async def _strengthen_incident(
             "incident_id": incident_id,
             "signal_type": signal_type,
             "raw_content": extracted.get("location_raw", ""),
-            "extracted": str(extracted).replace("'", '"'),
+            "extracted": json.dumps(extracted),
             "source_phone": source_id[:15],
             "confidence": extracted.get("confidence", 0.0),
         },

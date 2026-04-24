@@ -33,7 +33,7 @@ A flood sends 200 conflicting signals, not one clean voice note. Situations evol
 The closest volunteer doesn't confirm. A new signal contradicts an earlier one. The road that was open is now flooded. An agent detects these changes and replans without human intervention.
 
 **Tool use across systems**
-Maps API, PostGIS volunteer queries, WhatsApp message delivery, Firebase state sync, incident logging — an agent orchestrates all of these, choosing which to call and when based on the current state of the crisis.
+Maps API, PostGIS volunteer queries, Telegram message delivery, Firebase state sync, incident logging — an agent orchestrates all of these, choosing which to call and when based on the current state of the crisis.
 
 ---
 
@@ -53,7 +53,7 @@ Four specialized agents are orchestrated by a central **Crisis Commander**. Each
 │   SIGNAL AGENT   │  │   TRIAGE AGENT   │  │  DISPATCH AGENT  │  │  MONITOR AGENT   │
 │                  │  │                  │  │                  │  │                  │
 │  Ingests raw     │  │  Resolves        │  │  Matches, routes,│  │  Tracks active   │
-│  WhatsApp chaos  │  │  conflicts,      │  │  confirms        │  │  incidents,      │
+│  Telegram msgs   │  │  conflicts,      │  │  confirms        │  │  incidents,      │
 │  Extract, geocode│  │  detects drift   │  │  volunteers      │  │  flags stalls    │
 └──────────────────┘  └──────────────────┘  └──────────────────┘  └──────────────────┘
 ```
@@ -66,10 +66,10 @@ Four specialized agents are orchestrated by a central **Crisis Commander**. Each
 
 **Role:** First point of contact. Ingestion, extraction, and corroboration.
 
-**Triggers:** Every incoming WhatsApp payload — voice note, image, or text.
+**Triggers:** Every incoming Telegram update — voice note, image, or text.
 
 **What it does:**
-- Downloads media bytes from Meta's CDN
+- Downloads media bytes from Telegram's CDN via getFile API
 - Calls Gemini multimodal to extract structured entity from audio/image/text
 - Geocodes the stated location via Maps API to lat/lng
 - Queries PostGIS for an existing incident within 2km + 2 hour window
@@ -165,7 +165,7 @@ If signal velocity accelerates (5 signals in 10 minutes vs 1 in the first 10 min
 **What it does:**
 1. Queries PostGIS for nearest eligible volunteers ranked by: distance + skill match + language + historical response rate
 2. Calculates approach route via Maps Routes API (accounting for blocked roads from incident signals)
-3. Sends WhatsApp task card to top candidate
+3. Sends Telegram task card to top candidate
 4. Enters autonomous confirmation loop — **no human intervention required:**
 
 ```
@@ -199,7 +199,7 @@ Wait 8 minutes
 | Tool | Purpose |
 |---|---|
 | `query_eligible_volunteers(lat, lng, skills, radius_km)` | PostGIS nearest-neighbor with skill filter |
-| `send_whatsapp_task_card(volunteer_id, incident_object, route)` | Formatted task card via WhatsApp API |
+| `send_telegram_task_card(volunteer_id, incident_object, route)` | Formatted task card via Telegram Bot API |
 | `wait_for_confirmation(volunteer_id, timeout_minutes)` | Async wait with timeout |
 | `mark_volunteer_unresponsive(volunteer_id)` | Update availability in DB |
 | `calculate_route(origin, destination, avoid_roads)` | Maps Routes API with road avoidance |
@@ -218,7 +218,7 @@ Wait 8 minutes
 **What it watches for:**
 
 **Timeout without arrival**
-Volunteer confirmed 45 mins ago, ETA was 22 mins, no "arrived" update. Monitor Agent sends check-in WhatsApp. No response in 5 mins → alert coordinator + trigger re-dispatch.
+Volunteer confirmed 45 mins ago, ETA was 22 mins, no "arrived" update. Monitor Agent sends check-in Telegram message. No response in 5 mins → alert coordinator + trigger re-dispatch.
 
 **Situation drift**
 New field signals show incident expanding (more people, new location pins, rising water language). Fire back to Crisis Commander to re-evaluate and dispatch additional volunteers.
@@ -231,7 +231,7 @@ Volunteer field update confirms situation resolved. Trigger post-incident docume
 | Tool | Purpose |
 |---|---|
 | `get_active_dispatches()` | All confirmed dispatches currently in progress |
-| `send_volunteer_checkin(volunteer_id)` | WhatsApp check-in message |
+| `send_volunteer_checkin(volunteer_id)` | Telegram check-in message |
 | `check_for_new_signals(incident_id, since_timestamp)` | Poll for field updates |
 | `calculate_incident_drift(incident_id)` | Detect geographic or scope expansion |
 | `trigger_redispatch(incident_id)` | Wake Dispatch Agent for additional volunteers |
@@ -245,7 +245,7 @@ Volunteer field update confirms situation resolved. Trigger post-incident docume
 ## 4. Full Agentic Loop — End to End
 
 ```
-WhatsApp signal arrives (voice / image / text)
+Telegram signal arrives (voice / image / text)
         │
         ▼
 ┌────────────────────┐
@@ -270,7 +270,7 @@ WhatsApp signal arrives (voice / image / text)
                      ▼                └─────┬─────┘  └──────────┘  │   OR    │
               Crisis Commander              │                        └──────────┘
               re-evaluates                  ▼
-                                   Send WhatsApp task card
+                                   Send Telegram task card
                                             │
                                   ┌─────────┴──────────┐
                                   ▼                    ▼
@@ -299,7 +299,7 @@ WhatsApp signal arrives (voice / image / text)
 
 | Event | Agent Triggered | Action |
 |---|---|---|
-| WhatsApp signal arrives | Signal Agent | Extract, geocode, create or strengthen incident |
+| Telegram signal arrives | Signal Agent | Extract, geocode, create or strengthen incident |
 | New incident created | Crisis Commander | Reason, invoke Triage + Dispatch |
 | Existing incident updated | Triage Agent | Resolve conflicts, detect velocity |
 | Severity upgraded | Crisis Commander | Re-evaluate coverage, consider NDRF |
@@ -337,7 +337,7 @@ traan/
 └── skills/
     ├── gemini-calls.md
     ├── postgis-queries.md
-    └── whatsapp-messages.md
+    └── telegram-messages.md
 ```
 
 ### How to Start Each Claude Code Session
@@ -394,16 +394,16 @@ Stop after that. Tell me how to test it.
 ```
 
 ### Milestone 2 — Signal Agent
-**What to build:** WhatsApp webhook endpoint + Gemini multimodal extraction + geocoding + incident create/strengthen
+**What to build:** Telegram webhook endpoint + Gemini multimodal extraction + geocoding + incident create/strengthen
 
-**Test:** POST a fake WhatsApp audio payload to `/webhook` → incident appears in DB with coordinates populated.
+**Test:** POST a fake Telegram text payload to `/webhook` → incident appears in DB with coordinates populated.
 
 **Prompt to use:**
 ```
 Read CLAUDE.md and docs/Traan_Agentic_Workflow.md section 3.1.
 Build Milestone 2: Signal Agent.
 Follow conventions in skills/gemini-calls.md and skills/postgis-queries.md.
-Create: /backend/api/webhook.py (Meta verification + payload receiver),
+Create: /backend/api/webhook.py (Telegram webhook receiver),
 /backend/services/gemini_fusion.py (multimodal extract),
 /backend/services/geo_service.py (geocode_location + query_nearby_incidents),
 /backend/agents/signal_agent.py (all tools from section 3.1).
@@ -427,7 +427,7 @@ Stop after. Tell me the test payload to use.
 ---
 
 ### Milestone 5 — Dispatch Agent
-**What to build:** PostGIS volunteer query + WhatsApp task card + confirmation loop with 8-minute timeout + fallback
+**What to build:** PostGIS volunteer query + Telegram task card + confirmation loop with 8-minute timeout + fallback
 
 **Test:** Incident created with a seeded volunteer in DB → task card sent → simulate no response → verify auto re-dispatch fires after 8 minutes.
 
@@ -443,7 +443,7 @@ Stop after. Tell me the test payload to use.
 ### Milestone 7 — Pub/Sub Integration
 **What to build:** Wire all agent handoffs through Pub/Sub instead of direct function calls
 
-**Test:** Full end-to-end: WhatsApp webhook → Pub/Sub → Signal Agent → Commander → Dispatch Agent → task card received on test phone.
+**Test:** Full end-to-end: Telegram webhook → Pub/Sub → Signal Agent → Commander → Dispatch Agent → task card received on test phone.
 
 ---
 

@@ -39,6 +39,7 @@ async def geocode_location(location_string: str) -> dict | None:
                     "address": location_string,
                     "key": config.get_google_maps_api_key(),
                     "region": "in",
+                    "language": "en",
                 },
             )
             resp.raise_for_status()
