@@ -15,7 +15,7 @@ Analyze the following signal from a field worker and extract structured data.
 The signal may be a voice note in Hindi or a regional Indian language, a damage photograph, or a text message.
 
 Extract and return ONLY a JSON object with these exact keys:
-- location_raw: string — the place name or description as stated by the reporter
+- location_raw: string — the most specific place name possible in this format: village/town, district, state. Separate multiple locations with semicolons. Never combine city names without commas between them.
 - affected_count: integer — number of people affected (use 0 if unknown)
 - need_types: array of strings — from: ["evacuation", "medical", "food", "shelter", "rescue", "water"]
 - vulnerable_groups: array of strings — from: ["elderly", "children", "pregnant", "disabled"]

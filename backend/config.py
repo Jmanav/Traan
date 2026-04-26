@@ -17,23 +17,31 @@ def _require(var: str) -> str:
         )
     return val
 
+GEMINI_API_KEY: str = _require("GEMINI_API_KEY")
+GOOGLE_MAPS_API_KEY: str = _require("GOOGLE_MAPS_API_KEY")
+TELEGRAM_BOT_TOKEN: str = _require("TELEGRAM_BOT_TOKEN")
+TELEGRAM_WEBHOOK_SECRET: str = _require("TELEGRAM_WEBHOOK_SECRET")
+FIREBASE_CREDENTIALS_PATH: str = _require("FIREBASE_CREDENTIALS_PATH")
+PUBSUB_PROJECT_ID: str = _require("PUBSUB_PROJECT_ID")
+PUBSUB_TOPIC_ID: str = _require("PUBSUB_TOPIC_ID")
+
 def get_gemini_api_key() -> str:
-    return _require("GEMINI_API_KEY")
+    return GEMINI_API_KEY
 
 def get_google_maps_api_key() -> str:
-    return _require("GOOGLE_MAPS_API_KEY")
+    return GOOGLE_MAPS_API_KEY
 
 def get_telegram_bot_token() -> str:
-    return _require("TELEGRAM_BOT_TOKEN")
+    return TELEGRAM_BOT_TOKEN
 
 def get_telegram_webhook_secret() -> str:
-    return _require("TELEGRAM_WEBHOOK_SECRET")
+    return TELEGRAM_WEBHOOK_SECRET
 
 def get_firebase_credentials_path() -> str:
-    return _require("FIREBASE_CREDENTIALS_PATH")
+    return FIREBASE_CREDENTIALS_PATH
 
 def get_pubsub_project_id() -> str:
-    return _require("PUBSUB_PROJECT_ID")
+    return PUBSUB_PROJECT_ID
 
 def get_pubsub_topic_id() -> str:
-    return _require("PUBSUB_TOPIC_ID")
+    return PUBSUB_TOPIC_ID
