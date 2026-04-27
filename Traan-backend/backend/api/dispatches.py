@@ -95,28 +95,41 @@ async def create_dispatch(
     await session.commit()
 
     # Notify volunteer via Telegram (non-blocking — failure does not roll back)
+    # Requires the volunteer's phone to be a valid Telegram chat_id.
+    # Volunteers who registered via the Telegram bot will have their user ID stored
+    # in the phone field until a dedicated telegram_chat_id column is added.
     try:
         from backend.services import telegram_sender  # noqa: PLC0415
 
-        # telegram_sender.send_acknowledgement expects (chat_id, incident_id, is_new)
-        # We use the volunteer's phone as a proxy identifier for logging purposes.
-        # In production, volunteers would have a telegram_chat_id column.
-        # For now we log the attempt and gracefully handle missing chat_id.
         volunteer_phone = vol_row.get("phone")
-        if volunteer_phone:
-            # --- HACKATHON DEMO OVERRIDE ---
-            # Automatically route all dispatches to the developer's phone for demo purposes
-            chat_id = 1283521836
+        if not volunteer_phone:
+            logger.warning(
+                "No phone on volunteer %s — skipping Telegram dispatch notification",
+                body.volunteerId,
+            )
+        else:
+            try:
+                chat_id = int(volunteer_phone)
+            except (ValueError, TypeError):
+                logger.warning(
+                    "Volunteer %s phone '%s' is not a numeric Telegram chat_id — skipping notification",
+                    body.volunteerId,
+                    volunteer_phone,
+                )
+                chat_id = None
 
-            if chat_id:
-                # Fetch incident details for the notification
+            if chat_id is not None:
                 inc_dets = await session.execute(
                     text("SELECT location_raw, need_types FROM incidents WHERE id = :id"),
-                    {"id": body.incidentId}
+                    {"id": body.incidentId},
                 )
                 inc_det_row = inc_dets.mappings().first()
                 loc = inc_det_row["location_raw"] if inc_det_row else "Unknown Location"
-                needs = ", ".join(inc_det_row["need_types"]).upper() if inc_det_row and inc_det_row["need_types"] else "GENERAL ASSISTANCE"
+                needs = (
+                    ", ".join(inc_det_row["need_types"]).upper()
+                    if inc_det_row and inc_det_row["need_types"]
+                    else "GENERAL ASSISTANCE"
+                )
 
                 await telegram_sender.send_dispatch_notification(
                     chat_id=chat_id,

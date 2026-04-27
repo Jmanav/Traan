@@ -23,6 +23,8 @@ GEMINI_API_KEY: str = _require("GEMINI_API_KEY")
 GOOGLE_MAPS_API_KEY: str = os.environ.get("GOOGLE_MAPS_API_KEY", "")
 TELEGRAM_BOT_TOKEN: str = _require("TELEGRAM_BOT_TOKEN")
 TELEGRAM_WEBHOOK_SECRET: str = _require("TELEGRAM_WEBHOOK_SECRET")
+FRONTEND_URL: str = os.environ.get("FRONTEND_URL", "*")
+
 # Firebase and Pub/Sub are not used in the current integration — placeholders are fine.
 FIREBASE_CREDENTIALS_PATH: str = os.environ.get("FIREBASE_CREDENTIALS_PATH", "placeholder")
 PUBSUB_PROJECT_ID: str = os.environ.get("PUBSUB_PROJECT_ID", "placeholder")

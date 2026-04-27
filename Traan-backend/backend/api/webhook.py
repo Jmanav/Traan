@@ -1,6 +1,7 @@
+import hmac
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, Request, Response, Header
+from fastapi import APIRouter, BackgroundTasks, Request, Response
 from fastapi.responses import JSONResponse
 
 import backend.config as config
@@ -28,32 +29,16 @@ async def _process_update(update: dict) -> None:
         logger.error("Signal agent failed for update %s: %s", update.get("update_id"), exc)
 
 
-_DEV_SECRETS = {"placeholder"}
-
-
-def _is_dev_secret(secret: str) -> bool:
-    return secret in _DEV_SECRETS or secret.startswith("traan")
-
-
 @router.post("/webhook")
 async def telegram_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
-    x_telegram_bot_api_secret_token: str | None = Header(default=None),
 ) -> Response:
-    expected_secret = config.get_telegram_webhook_secret()
-    incoming = x_telegram_bot_api_secret_token
+    incoming = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
+    expected = config.get_telegram_webhook_secret()
 
-    logger.debug(
-        "Webhook auth — incoming: %r (len=%s) | expected: %r (len=%s)",
-        incoming, len(incoming) if incoming else 0,
-        expected_secret, len(expected_secret),
-    )
-
-    if _is_dev_secret(expected_secret):
-        logger.warning("Webhook secret is a dev placeholder — skipping auth validation")
-    elif incoming != expected_secret:
-        return JSONResponse(status_code=403, content={"ok": False, "error": "forbidden"})
+    if not hmac.compare_digest(incoming, expected):
+        return JSONResponse({"ok": False, "error": "forbidden"}, status_code=403)
 
     try:
         update = await request.json()

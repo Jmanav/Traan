@@ -23,10 +23,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Traan Crisis Dispatch API", lifespan=lifespan)
 
-# CORS — allow the Next.js dashboard at localhost:3000
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[config.FRONTEND_URL],
     allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
 )
