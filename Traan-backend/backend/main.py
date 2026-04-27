@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +8,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
 
 import backend.config as config
+
+logger = logging.getLogger(__name__)
 
 engine = None
 AsyncSessionLocal = None
@@ -58,6 +61,7 @@ async def health():
             await session.execute(text("SELECT 1"))
         return {"status": "ok"}
     except Exception as exc:
+        logger.exception("Health check DB query failed")
         return JSONResponse(
             status_code=503,
             content={"status": "error", "detail": str(exc)},
