@@ -22,7 +22,7 @@ India has ~3.3M NGOs. When a crisis hits, the first 6 hours are when coordinated
 
 | Agent | Role |
 |---|---|
-| **Signal Agent** | Ingests Telegram update, extracts via Gemini multimodal, geocodes, corroborates with existing incidents |
+| **Signal Agent** | Ingests Telegram update, extracts via Gemini multimodal, geocodes via Nominatim, corroborates with existing incidents |
 | **Crisis Commander** | Master orchestrator — Gemini reasoning loop, decides which agents to invoke and when |
 | **Triage Agent** | Resolves conflicting signals, detects crisis velocity, upgrades severity |
 | **Dispatch Agent** | PostGIS volunteer matching, Telegram task cards, autonomous 8-min confirmation loop with fallback |
@@ -43,29 +43,30 @@ India has ~3.3M NGOs. When a crisis hits, the first 6 hours are when coordinated
 
 ## Project Structure
 
+```
 traan/
 ├── CLAUDE.md                  # Claude Code memory
 ├── SPEC.md                    # Build spec
 ├── docs/
-    |__Traan_Agentic_Worflow.md 
 │   ├── Traan.md               # This file — project overview
-│   └── Traan_Architecture.md  # Tech stack per feature + DB schema
+│   ├── Traan_Architecture.md  # Tech stack per feature + DB schema
+│   └── Traan_Agentic_Workflow.md
 ├── skills/
 │   ├── gemini-calls.md
 │   ├── postgis-queries.md
 │   └── telegram-messages.md
 ├── backend/
 │   ├── main.py
-│   ├── api/          # webhook, incidents, volunteers, dispatch
-│   ├── agents/       # signal, crisis_commander, triage, dispatch, monitor
-│   ├── services/     # gemini_fusion, geo_service, telegram_sender, firebase_service
+│   ├── config.py
+│   ├── api/          # webhook, incidents, volunteers, dispatch, signals
+│   ├── agents/       # signal_agent, crisis_commander, triage_agent, dispatch_agent, monitor_agent
+│   ├── services/     # gemini_fusion, geo_service, telegram_sender, severity_scorer
 │   ├── models/       # incident, volunteer, signal, dispatch, event
 │   └── workers/      # pubsub_consumer, monitor_scheduler
-├── frontend/
-│   └── src/components/  # CrisisMap, IncidentCard, VolunteerOverlay, DispatchPanel
-├── infra/            # cloudbuild.yaml, terraform
-├── docker-compose.yml
-└── .env.example
+├── frontend/         # Next.js 14 + TypeScript dashboard
+├── .env.example
+└── setup.md
+```
 
 ---
 

@@ -19,31 +19,33 @@ Built for Google AI Solution Challenge 2026.
 
 ## Tech Stack
 - Backend: Python + FastAPI
-- AI: Gemini 1.5 Pro via Gemini API (google-generativeai SDK) — NOT Vertex AI
+- AI: Gemini 2.5 Flash via Gemini API (google-generativeai SDK) — NOT Vertex AI
 - Database: PostgreSQL + PostGIS
 - Queue: Google Cloud Pub/Sub
-- Realtime: Firebase Realtime DB
-- Maps: Google Maps Geocoding API + Routes API
+- Geocoding: OpenStreetMap Nominatim API (free, no API key required)
+- Maps (routing only): Google Maps Routes API — used in Dispatch Agent only
 - Messaging: Telegram Bot API
-- Frontend: React + TypeScript + Google Maps JS API
+- Frontend: Next.js 14 + TypeScript + Google Maps JS API + Deck.gl
 - Hosting: Google Cloud Run
 
 ## Hard Rules — Never Break These
 - AI model: use google-generativeai SDK with GEMINI_API_KEY — never Vertex AI
 - All Gemini calls go through backend/services/gemini_fusion.py only
-- All PostGIS + Maps calls go through backend/services/geo_service.py only
+- All PostGIS queries go through backend/services/geo_service.py only
+- Geocoding uses Nominatim (OSM) in geo_service.py — NOT Google Maps Geocoding API
+- Google Maps API key is only used for Routes API in the Dispatch Agent
 - All Telegram outbound messages go through backend/services/telegram_sender.py only
-- All Firebase events go through backend/services/firebase_service.py only
 - Never hardcode any API key — always load from environment via backend/config.py
 - Every agent action must log to the events table with agent_name, incident_id, action, outcome
+- No Firebase anywhere in this project
 
 ## Project Structure
 backend/
-  api/        — webhook.py, incidents.py, volunteers.py, dispatch.py
+  api/        — webhook.py, incidents.py, volunteers.py, dispatch.py, signals.py
   agents/     — signal_agent.py, crisis_commander.py, triage_agent.py,
                 dispatch_agent.py, monitor_agent.py
   services/   — gemini_fusion.py, geo_service.py, telegram_sender.py,
-                firebase_service.py, severity_scorer.py
+                severity_scorer.py
   models/     — incident.py, volunteer.py, signal.py, dispatch.py, event.py
   workers/    — pubsub_consumer.py, monitor_scheduler.py
   config.py   — all env var loading
@@ -51,7 +53,7 @@ backend/
 ## Local Dev Setup
 - PostgreSQL 15 + PostGIS installed locally on Windows
 - Database: `traan`, user: `postgres`, host: `localhost:5432`
-- Python venv: `.venv\Scripts\Activate.ps1`
+- Python venv: `venv\Scripts\Activate.ps1`
 - Start server: `uvicorn backend.main:app --reload`
 - Run migrations: `alembic upgrade head`
 - Full setup guide: `setup.md` in project root
@@ -69,4 +71,4 @@ backend/
 - Milestone 5: Dispatch Agent
 - Milestone 6: Monitor Agent
 - Milestone 7: Pub/Sub wiring
-- Milestone 8: Firebase + dashboard prep
+- Milestone 8: REST API endpoints + frontend wiring

@@ -27,11 +27,11 @@ Converts raw voice notes in Hindi/regional languages, damage photos, and texts i
 
 | Component | Technology | Why |
 |---|---|---|
-| Core AI model | Gemini 1.5 Pro via Vertex AI | One model handles audio + image + text together. Native support for Hindi, Marathi, Bengali, Tamil, Assamese. |
+| Core AI model | Gemini 2.5 Flash via Gemini API | One model handles audio + image + text together. Native support for Hindi, Marathi, Bengali, Tamil, Assamese. |
 | Audio processing | Gemini Audio (built-in) | Transcription + entity extraction in one pass — no separate Speech-to-Text step |
 | Image understanding | Gemini Vision (built-in) | Damage classification, road inundation detection, landmark recognition from field photos |
 | Structured output | Gemini JSON mode | Extracts: `location_raw`, `affected_count`, `need_types`, `vulnerable_groups`, `access_constraints`, `urgency_signals`, `confidence` |
-| Location resolution | Google Maps Geocoding API | Converts "Kareli village, near Nashik" → `{lat, lng}` |
+| Location resolution | OpenStreetMap Nominatim API | Free geocoding — converts "Kareli, Nashik, Maharashtra" → `{lat, lng}`. No API key required. Uses 3-attempt progressive fallback. |
 | Corroboration | PostGIS `ST_DWithin` | Checks for existing incident within 2km + 2hr window; merges if found |
 
 **Key files:** `backend/agents/signal_agent.py`, `backend/services/gemini_fusion.py`, `backend/services/geo_service.py`
@@ -63,13 +63,13 @@ Runs on every meaningful state change. Reasons over the full situational picture
 
 | Component | Technology | Why |
 |---|---|---|
-| Reasoning engine | Gemini 1.5 Pro (Vertex AI) | Large context window holds full incident state + volunteer map in one prompt. Function calling API maps to agent tool invocations. |
+| Reasoning engine | Gemini 2.5 Flash via Gemini API | Large context window holds full incident state + volunteer map in one prompt. Function calling API maps to agent tool invocations. |
 | Orchestration | Custom Python class | Full control over reasoning loop, tool call sequencing, retry logic, and state management |
 | State persistence | PostgreSQL `events` table | Every Commander decision logged: `agent_name`, `incident_id`, `action`, `payload`, `outcome`, `timestamp` |
-| Real-time sync | Firebase Realtime DB | Fires state change events to coordinator dashboard — no polling needed |
+| Coordinator alerts | REST endpoint + SWR polling | Dashboard polls `/api/incidents` every 10s — no real-time push layer needed |
 | Escalation | `escalate_to_ndrf()` tool | Flags critical incidents to national authority when volunteer coverage fails |
 
-**Key files:** `backend/agents/crisis_commander.py`, `backend/services/firebase_service.py`
+**Key files:** `backend/agents/crisis_commander.py`
 
 ---
 
@@ -130,17 +130,17 @@ Heartbeat every 3 minutes across all confirmed dispatches. Detects stalls, drift
 ## Feature 8: Coordinator Dashboard
 **Milestone 8 — Human visibility layer**
 
-Live map giving NGO coordinators full situational awareness. Receives updates within 1–2 seconds of any agent action.
+Live map giving NGO coordinators full situational awareness. Frontend polls the backend REST API via SWR.
 
 | Component | Technology | Why |
 |---|---|---|
-| Frontend | React + TypeScript | Component model maps cleanly to incident cards, overlays, dispatch panels |
+| Frontend | Next.js 14 + TypeScript | App Router, strict mode, no Pages Router |
 | Crisis map | Google Maps JavaScript API | Custom severity markers, geographic clustering, polygon overlays for drift zones |
-| Data viz | deck.gl | Severity heatmap layer, arc layer showing volunteer-to-incident assignment lines |
-| Real-time updates | Firebase Realtime DB listener | Sub-2-second map updates on every agent state change |
+| Data viz | Deck.gl v9 | Severity heatmap layer, arc layer showing volunteer-to-incident assignment lines |
+| Data fetching | SWR polling (10s incidents, 15s volunteers) | Simple, reliable — no WebSocket complexity needed |
 | Deployment | Google Cloud Run | Serverless, scales to zero, handles traffic spikes during crises |
 
-**Key files:** `frontend/src/components/CrisisMap.tsx`, `frontend/src/hooks/useFirebaseSync.ts`
+**Key files:** `frontend/components/dashboard/`, `frontend/lib/hooks/useIncidents.ts`, `frontend/lib/hooks/useVolunteers.ts`
 
 ---
 
@@ -150,11 +150,9 @@ Live map giving NGO coordinators full situational awareness. Receives updates wi
 | Component | Technology | Why |
 |---|---|---|
 | Backend hosting | Google Cloud Run | Serverless containers, free tier generous, GCP stack expected by judges |
-| Local dev | Docker + docker-compose | FastAPI + PostgreSQL/PostGIS mirrors production locally |
-| CI/CD | Google Cloud Build | Auto test + deploy on push to main |
-| IaC | Terraform | Reproducible Pub/Sub + Cloud Run setup |
+| Local dev | PostgreSQL 15 + PostGIS on Windows | `uvicorn backend.main:app --reload` for dev |
 | Secrets | python-dotenv + `.env` | All API keys via environment variables — never hardcoded |
-| Logging | Google Cloud Logging | Structured agent action logs with `incident_id` context |
+| Logging | Python `logging` module | Structured agent action logs with `incident_id` context |
 
 ---
 
@@ -244,10 +242,10 @@ CREATE INDEX idx_events_incident       ON events(incident_id);
 
 ```
 GEMINI_API_KEY
-GOOGLE_MAPS_API_KEY
+GOOGLE_MAPS_API_KEY        # Routes API only — used by Dispatch Agent for routing
 TELEGRAM_BOT_TOKEN
+TELEGRAM_WEBHOOK_SECRET
 DATABASE_URL
-FIREBASE_CREDENTIALS_PATH
 PUBSUB_PROJECT_ID
 PUBSUB_TOPIC_ID
 ```

@@ -11,10 +11,7 @@
 4. [Full Agentic Loop — End to End](#4-full-agentic-loop--end-to-end)
 5. [State Transition Table](#5-state-transition-table)
 6. [Building with Claude Code](#6-building-with-claude-code)
-7. [CLAUDE.md Template](#7-claudemd-template)
-8. [SPEC.md Template](#8-specmd-template)
-9. [Claude Code Skills](#9-claude-code-skills)
-10. [Build Order & Milestones](#10-build-order--milestones)
+7. [Build Order & Milestones](#7-build-order--milestones)
 
 ---
 
@@ -33,7 +30,7 @@ A flood sends 200 conflicting signals, not one clean voice note. Situations evol
 The closest volunteer doesn't confirm. A new signal contradicts an earlier one. The road that was open is now flooded. An agent detects these changes and replans without human intervention.
 
 **Tool use across systems**
-Maps API, PostGIS volunteer queries, Telegram message delivery, Firebase state sync, incident logging — an agent orchestrates all of these, choosing which to call and when based on the current state of the crisis.
+Google Maps Routes API, PostGIS volunteer queries, Telegram message delivery, incident logging — an agent orchestrates all of these, choosing which to call and when based on the current state of the crisis.
 
 ---
 
@@ -44,7 +41,7 @@ Four specialized agents are orchestrated by a central **Crisis Commander**. Each
 ```
                     ┌─────────────────────────┐
                     │     CRISIS COMMANDER    │  ← Master orchestrator
-                    │     (Gemini 1.5 Pro)    │    Reasons, plans, delegates
+                    │    (Gemini 2.5 Flash)   │    Reasons, plans, delegates
                     └────────────┬────────────┘
                                  │
           ┌──────────────────────┼──────────────────────┐
@@ -71,7 +68,7 @@ Four specialized agents are orchestrated by a central **Crisis Commander**. Each
 **What it does:**
 - Downloads media bytes from Telegram's CDN via getFile API
 - Calls Gemini multimodal to extract structured entity from audio/image/text
-- Geocodes the stated location via Maps API to lat/lng
+- Geocodes the stated location via OpenStreetMap Nominatim to lat/lng (3-attempt progressive fallback)
 - Queries PostGIS for an existing incident within 2km + 2 hour window
   - **Match found** → Strengthens existing incident (increments signal_count, updates affected_count if higher, re-evaluates severity)
   - **No match** → Creates new incident, fires event to Crisis Commander
@@ -81,7 +78,7 @@ Four specialized agents are orchestrated by a central **Crisis Commander**. Each
 | Tool | Purpose |
 |---|---|
 | `gemini_multimodal_extract(payload)` | Transcribe + entity extract from audio/image/text in one Gemini call |
-| `geocode_location(location_string)` | Convert stated location to lat/lng via Maps Geocoding API |
+| `geocode_location(location_string)` | Convert stated location to lat/lng via Nominatim (OSM). No API key needed. |
 | `query_nearby_incidents(lat, lng, radius_km, time_window_hours)` | PostGIS corroboration check |
 | `create_incident(incident_object)` | Write new incident to PostgreSQL + PostGIS |
 | `strengthen_incident(incident_id, new_signal)` | Merge new signal into existing incident, recalculate severity |
@@ -97,9 +94,9 @@ Four specialized agents are orchestrated by a central **Crisis Commander**. Each
 **Triggers:** New incident created, incident updated, volunteer responds/declines, Monitor Agent flags drift, time threshold crossed.
 
 **What it does:**
-Runs a Gemini 1.5 Pro reasoning loop with full situational context:
+Runs a Gemini 2.5 Flash reasoning loop with full situational context:
 
-> *"Kareli village: severity 87, 60–70 trapped, elderly present, road blocked from Nashik. Volunteers within 30km: 4. Two already dispatched to a moderate incident in Pune. Should I reassign? What's the coverage gap? Is signal velocity accelerating? Should this go to NDRF?"*
+> *"Kareli, Nashik: severity 87, 60–70 trapped, elderly present, road blocked. Volunteers within 30km: 4. Two already dispatched to a moderate incident in Pune. Should I reassign? What's the coverage gap? Is signal velocity accelerating? Should this go to NDRF?"*
 
 It then decides:
 - Which agents to invoke and in what order
@@ -118,7 +115,7 @@ It then decides:
 | `invoke_dispatch_agent(incident_id, constraints)` | Delegate volunteer matching and dispatch |
 | `invoke_monitor_agent(incident_id)` | Delegate active surveillance |
 | `escalate_to_ndrf(incident_id, reason)` | Flag to national disaster authority |
-| `notify_coordinator(message, urgency)` | Push alert to dashboard |
+| `notify_coordinator(message, urgency)` | Log alert to events table for dashboard to surface |
 
 **Output:** Sequence of agent invocations + logged reasoning in events table.
 
@@ -164,7 +161,7 @@ If signal velocity accelerates (5 signals in 10 minutes vs 1 in the first 10 min
 
 **What it does:**
 1. Queries PostGIS for nearest eligible volunteers ranked by: distance + skill match + language + historical response rate
-2. Calculates approach route via Maps Routes API (accounting for blocked roads from incident signals)
+2. Calculates approach route via Google Maps Routes API (accounting for blocked roads from incident signals)
 3. Sends Telegram task card to top candidate
 4. Enters autonomous confirmation loop — **no human intervention required:**
 
@@ -202,7 +199,7 @@ Wait 8 minutes
 | `send_telegram_task_card(volunteer_id, incident_object, route)` | Formatted task card via Telegram Bot API |
 | `wait_for_confirmation(volunteer_id, timeout_minutes)` | Async wait with timeout |
 | `mark_volunteer_unresponsive(volunteer_id)` | Update availability in DB |
-| `calculate_route(origin, destination, avoid_roads)` | Maps Routes API with road avoidance |
+| `calculate_route(origin, destination, avoid_roads)` | Google Maps Routes API with road avoidance |
 | `report_coverage_failure(incident_id)` | Signal back to Crisis Commander |
 
 **Output:** Confirmed volunteer assigned + approach route calculated, OR coverage failure reported.
@@ -318,34 +315,18 @@ Telegram signal arrives (voice / image / text)
 ### The Core Flow
 
 ```
-Prepare docs → Write CLAUDE.md → Write SPEC.md → Plan Mode → 
-Approve plan → Build milestone by milestone → Test each → 
-Update CLAUDE.md → Repeat
+Read CLAUDE.md + docs → Plan Mode → Approve plan →
+Build milestone → Test → Update CLAUDE.md → Repeat
 ```
 
-Never skip Plan Mode. Never build more than one milestone before testing. Always update CLAUDE.md after a milestone completes — it's Claude Code's only memory across sessions.
+Never skip Plan Mode. Never build more than one milestone before testing. Always update CLAUDE.md after a milestone completes.
 
-### Folder Setup Before Opening Claude Code
-
-```
-traan/
-├── CLAUDE.md                     ← Claude Code memory (write this first)
-├── SPEC.md                       ← Build spec (source of truth)
-├── docs/
-│   ├── Traan.md                  ← Overview + architecture + tech stack
-│   └── Traan_Agentic_Workflow.md ← This file
-└── skills/
-    ├── gemini-calls.md
-    ├── postgis-queries.md
-    └── telegram-messages.md
-```
-
-### How to Start Each Claude Code Session
+### How to Start Each Session
 
 ```
 Read CLAUDE.md, SPEC.md, and docs/Traan_Agentic_Workflow.md before doing anything.
 We are building [Milestone N: name].
-The relevant section in Traan_Agentic_Workflow.md is [section number].
+The relevant section is [section number].
 ```
 
 ### How to Prompt for a Specific File
@@ -360,59 +341,32 @@ After writing, tell me what tests I should run to verify it works.
 ### How to Handle Bugs
 
 ```
-The geocoding step in signal_agent.py returns None for "Kareli village, near Nashik".
+The geocoding step in signal_agent.py returns None for "Kareli, near Nashik".
 Error: [paste error]
 Check geo_service.py and fix without changing the function signature.
 ```
 
-### How to Review Before Moving On
+---
 
-```
-Before we move to Milestone [N+1], review everything built so far against SPEC.md.
-List any gaps or anything that doesn't match the spec.
-```
-----
+## 7. Build Order & Milestones
 
-## 10. Build Order & Milestones
+Build exactly one milestone at a time. Test before moving to the next.
 
-Build exactly one milestone at a time. Test before moving to the next. Tell Claude Code explicitly which milestone you are on at the start of every session.
+### Milestone 1 — Foundation ✅
+**What to build:** DB schema + SQLAlchemy models + environment config + FastAPI skeleton
 
-### Milestone 1 — Foundation
-**What to build:** DB schema + SQLAlchemy models + environment config + FastAPI skeleton + docker-compose
-
-**Test:** `docker-compose up` starts without errors. PostgreSQL with PostGIS running. All tables created. FastAPI returns 200 on `/health`.
-
-**Prompt to use:**
-```
-Read CLAUDE.md and SPEC.md. Build Milestone 1: Foundation.
-Create: docker-compose.yml with FastAPI + PostgreSQL/PostGIS, 
-the full DB schema from @docs/Traan_Architecture.md, 
-SQLAlchemy models for all tables, 
-config.py loading all env vars from .env.example,
-and a FastAPI main.py with /health endpoint.
-Stop after that. Tell me how to test it.
-```
-
-### Milestone 2 — Signal Agent
-**What to build:** Telegram webhook endpoint + Gemini multimodal extraction + geocoding + incident create/strengthen
-
-**Test:** POST a fake Telegram text payload to `/webhook` → incident appears in DB with coordinates populated.
-
-**Prompt to use:**
-```
-Read CLAUDE.md and docs/Traan_Agentic_Workflow.md section 3.1.
-Build Milestone 2: Signal Agent.
-Follow conventions in skills/gemini-calls.md and skills/postgis-queries.md.
-Create: /backend/api/webhook.py (Telegram webhook receiver),
-/backend/services/gemini_fusion.py (multimodal extract),
-/backend/services/geo_service.py (geocode_location + query_nearby_incidents),
-/backend/agents/signal_agent.py (all tools from section 3.1).
-Stop after. Tell me the test payload to use.
-```
+**Test:** PostgreSQL with PostGIS running. All tables created. FastAPI returns 200 on `/health`.
 
 ---
 
-### Milestone 3 — Triage Agent
+### Milestone 2 — Signal Agent ✅
+**What to build:** Telegram webhook endpoint + Gemini multimodal extraction + Nominatim geocoding + incident create/strengthen
+
+**Test:** POST a fake Telegram text payload to `/webhook` → incident appears in DB with coordinates populated.
+
+---
+
+### Milestone 3 — Triage Agent (In Progress)
 **What to build:** Conflict resolution logic + signal velocity detection + severity upgrade
 
 **Test:** POST two contradicting signals for the same location → DB shows resolved ground truth, not two conflicting rows.
@@ -427,7 +381,7 @@ Stop after. Tell me the test payload to use.
 ---
 
 ### Milestone 5 — Dispatch Agent
-**What to build:** PostGIS volunteer query + Telegram task card + confirmation loop with 8-minute timeout + fallback
+**What to build:** PostGIS volunteer query + Google Maps Routes API + Telegram task card + confirmation loop with 8-minute timeout + fallback
 
 **Test:** Incident created with a seeded volunteer in DB → task card sent → simulate no response → verify auto re-dispatch fires after 8 minutes.
 
@@ -447,10 +401,10 @@ Stop after. Tell me the test payload to use.
 
 ---
 
-### Milestone 8 (Post-core) — Firebase + Dashboard Prep
-**What to build:** Firebase event firing on every incident state change. Expose incident + dispatch endpoints for frontend consumption.
+### Milestone 8 — REST API + Frontend Wiring
+**What to build:** REST endpoints for incidents/volunteers/dispatches/signals + CORS + SWR hooks in frontend
 
-**Test:** State change in DB → Firebase event fires within 2 seconds. REST endpoints return correct incident + dispatch data.
+**Test:** Both servers running → send Telegram signal → wait 10s → incident appears on dashboard map.
 
 ---
 
