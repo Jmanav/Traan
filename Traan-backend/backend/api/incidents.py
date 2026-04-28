@@ -56,8 +56,7 @@ class IncidentPatch(BaseModel):
 # Helpers
 # ---------------------------------------------------------------------------
 
-_LIST_SQL = text(
-    """
+_LIST_SQL = """
     SELECT
         id::text,
         location_raw,
@@ -75,11 +74,9 @@ _LIST_SQL = text(
         updated_at
     FROM incidents
     ORDER BY severity_score DESC NULLS LAST
-    """
-)
+"""
 
-_GET_SQL = text(
-    """
+_GET_SQL = """
     SELECT
         id::text,
         location_raw,
@@ -97,8 +94,7 @@ _GET_SQL = text(
         updated_at
     FROM incidents
     WHERE id = :incident_id
-    """
-)
+"""
 
 
 def _row_to_out(row: dict) -> IncidentOut:
@@ -132,7 +128,7 @@ def _row_to_out(row: dict) -> IncidentOut:
 async def list_incidents(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> list[IncidentOut]:
-    result = await session.execute(_LIST_SQL)
+    result = await session.execute(text(_LIST_SQL))
     rows = result.mappings().all()
     return [_row_to_out(dict(r)) for r in rows]
 
@@ -142,7 +138,7 @@ async def get_incident(
     incident_id: str,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> IncidentOut:
-    result = await session.execute(_GET_SQL, {"incident_id": incident_id})
+    result = await session.execute(text(_GET_SQL), {"incident_id": incident_id})
     row = result.mappings().first()
     if row is None:
         raise HTTPException(status_code=404, detail="Incident not found")
@@ -156,7 +152,7 @@ async def patch_incident(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> IncidentOut:
     # Verify the incident exists first
-    check = await session.execute(_GET_SQL, {"incident_id": incident_id})
+    check = await session.execute(text(_GET_SQL), {"incident_id": incident_id})
     if check.mappings().first() is None:
         raise HTTPException(status_code=404, detail="Incident not found")
 
@@ -170,6 +166,6 @@ async def patch_incident(
     await session.commit()
 
     # Re-fetch the updated row
-    result = await session.execute(_GET_SQL, {"incident_id": incident_id})
+    result = await session.execute(text(_GET_SQL), {"incident_id": incident_id})
     row = result.mappings().first()
     return _row_to_out(dict(row))  # type: ignore[arg-type]

@@ -49,8 +49,7 @@ class VolunteerPatch(BaseModel):
 # Helpers
 # ---------------------------------------------------------------------------
 
-_LIST_SQL = text(
-    """
+_LIST_SQL = """
     SELECT
         v.id::text,
         v.name,
@@ -66,11 +65,9 @@ _LIST_SQL = text(
     FROM volunteers v
     LEFT JOIN dispatches d ON d.volunteer_id = v.id
     GROUP BY v.id
-    """
-)
+"""
 
-_GET_SQL = text(
-    """
+_GET_SQL = """
     SELECT
         v.id::text,
         v.name,
@@ -87,8 +84,7 @@ _GET_SQL = text(
     LEFT JOIN dispatches d ON d.volunteer_id = v.id
     WHERE v.id = :volunteer_id
     GROUP BY v.id
-    """
-)
+"""
 
 
 def _row_to_out(row: dict) -> VolunteerOut:
@@ -120,7 +116,7 @@ def _row_to_out(row: dict) -> VolunteerOut:
 async def list_volunteers(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> list[VolunteerOut]:
-    result = await session.execute(_LIST_SQL)
+    result = await session.execute(text(_LIST_SQL))
     rows = result.mappings().all()
     return [_row_to_out(dict(r)) for r in rows]
 
@@ -132,7 +128,7 @@ async def patch_volunteer(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> VolunteerOut:
     # Verify volunteer exists
-    check = await session.execute(_GET_SQL, {"volunteer_id": volunteer_id})
+    check = await session.execute(text(_GET_SQL), {"volunteer_id": volunteer_id})
     if check.mappings().first() is None:
         raise HTTPException(status_code=404, detail="Volunteer not found")
 
@@ -145,6 +141,6 @@ async def patch_volunteer(
     await session.commit()
 
     # Re-fetch updated row
-    result = await session.execute(_GET_SQL, {"volunteer_id": volunteer_id})
+    result = await session.execute(text(_GET_SQL), {"volunteer_id": volunteer_id})
     row = result.mappings().first()
     return _row_to_out(dict(row))  # type: ignore[arg-type]
